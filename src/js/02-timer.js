@@ -8,6 +8,7 @@ import { Notify } from 'notiflix/build/notiflix-notify-aio';
 import 'notiflix/dist/notiflix-notify-aio-3.1.0.min.js';
 
 
+// global refs
 const refs = {
     boxEl: document.createElement("div"),
     pEl: document.querySelector("p"),
@@ -16,15 +17,34 @@ const refs = {
     divTimer: document.querySelector(".timer"),
     selectedDate: 0,
     dateNowGlobal: 0,
+    timerId: "",
+    daysValue: document.querySelector('span.value[data-days]'),
+    hoursValue: document.querySelector('span.value[data-hours]'),
+    minutesValue: document.querySelector('span.value[data-minutes]'),
+    secondsValue: document.querySelector('span.value[data-seconds]'),
 };
 
 
+// added div.boxElement and disabled buttonStart
 refs.boxEl.className = "boxElement";
+refs.boxEl.style.height = "40vh";
+
+const btnReset = document.createElement("button");
+btnReset.className = "resetBtn";
+btnReset.type = "button";
+btnReset.setAttribute("data-reset", "");
+btnReset.textContent = "Reset page";
+btnReset.style.backgroundColor = "red";
+btnReset.style.color = "black";
+btnReset.style.marginLeft = "40px";
+
 refs.pEl.after(refs.boxEl);
-refs.boxEl.prepend(refs.inputDateTimePicker, refs.btnStart, refs.divTimer);
+refs.boxEl.prepend(refs.inputDateTimePicker, refs.btnStart, btnReset);
+refs.boxEl.after(refs.divTimer);
 refs.btnStart.setAttribute("disabled", "");
 
 
+// flatpickr options and init
 const options = {
   enableTime: true,
   time_24hr: true,
@@ -52,19 +72,50 @@ const options = {
 
 flatpickr(refs.inputDateTimePicker, options);
 
-
+// start timer
 refs.btnStart.addEventListener("click", () => {
     
-    // refs.btnStart.setAttribute("disabled", "");
+    refs.btnStart.setAttribute("disabled", "");
     refs.inputDateTimePicker.setAttribute("disabled", "");
-    
-    refs.dateNowGlobal = new Date();
-    console.log(refs.dateNowGlobal);
-    console.log("Timer Started!");
-    console.log(refs.selectedDate - refs.dateNowGlobal);
-    console.log(convertMs(refs.selectedDate - refs.dateNowGlobal));
+
+    refs.timerId = setInterval(timerRun, 1000);
+
 });
 
+// reset page
+btnReset.addEventListener("click", () => {
+    document.location.reload();
+ });
+
+function timerRun() {
+
+    refs.dateNowGlobal = new Date();
+    // console.log(refs.dateNowGlobal);
+
+    let deltaTimeMs = refs.selectedDate - refs.dateNowGlobal;
+
+    console.log(deltaTimeMs);
+    let deltaTimeMsObj = convertMs(deltaTimeMs);
+    
+    // adding textContent to html elements days, hours, minutes, seconds
+    const { days, hours, minutes, seconds } = deltaTimeMsObj;
+    
+    refs.daysValue.textContent = addLeadingZero(days);
+    refs.hoursValue.textContent = addLeadingZero(hours);
+    refs.minutesValue.textContent = addLeadingZero(minutes);
+    refs.secondsValue.textContent = addLeadingZero(seconds);
+
+    // check timer deltaTimeMs < 1s
+    if (deltaTimeMs < 1000) {
+        Notify.success('Timer is Over! Good luck!', {
+              clickToClose: true,
+              timeout: 4000,
+              position: 'center-center',
+          });
+        clearInterval(refs.timerId);
+    };
+
+};
 
 function convertMs(ms) {
   // Number of milliseconds per unit of time
@@ -84,8 +135,8 @@ function convertMs(ms) {
 
   return { days, hours, minutes, seconds };
 };
-
-// console.log(convertMs(2000)); // {days: 0, hours: 0, minutes: 0, seconds: 2}
-// console.log(convertMs(140000)); // {days: 0, hours: 0, minutes: 2, seconds: 20}
-// console.log(convertMs(24140000)); // {days: 0, hours: 6 minutes: 42, seconds: 20}
-
+function addLeadingZero(value) {
+    if (value < 10) {
+return `${value}`.padStart(2, "0");     // "00000value"
+    } else { return `${value}`};
+};
